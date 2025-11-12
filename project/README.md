@@ -1,7 +1,7 @@
 # Fake Social Media Simulator
 
 A desktop Java Swing application that simulates a social media platform with user authentication, posts, comments, likes, and AI-generated content. Built as a university-level project using Java Swing and MySQL.
-
+:)
 ## Features
 
 ### 🔐 User Authentication
