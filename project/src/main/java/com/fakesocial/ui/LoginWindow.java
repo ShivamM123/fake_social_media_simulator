@@ -16,7 +16,15 @@ public class LoginWindow extends JFrame {
     private JButton loginButton;
     private JButton registerButton;
     private UserDAO userDAO;
-    
+
+    // UI Styling
+    private final Color primaryColor = new Color(59, 89, 152);
+    private final Color bgColor = new Color(240, 242, 245);
+    private final Color panelColor = Color.WHITE;
+    private final Color borderColor = new Color(200, 200, 200);
+    private final Font buttonFont = new Font(Font.SANS_SERIF, Font.BOLD, 12);
+    private final Font titleFont = new Font(Font.SANS_SERIF, Font.BOLD, 24);
+
     public LoginWindow() {
         userDAO = new UserDAO();
         initializeUI();
@@ -25,21 +33,33 @@ public class LoginWindow extends JFrame {
     private void initializeUI() {
         setTitle("Login - Fake Social Media");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(400, 300);
+        setSize(400, 350);
         setLocationRelativeTo(null);
+        getContentPane().setBackground(bgColor);
         setLayout(new BorderLayout());
-        
-        // Main panel with padding
+
+        // Use a main panel with a border for a "card" effect
         JPanel mainPanel = new JPanel(new GridBagLayout());
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        mainPanel.setBackground(panelColor);
+        mainPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(borderColor, 1),
+                BorderFactory.createEmptyBorder(20, 20, 20, 20)
+        ));
+        
+        // Add padding around the main panel
+        JPanel paddingPanel = new JPanel(new BorderLayout());
+        paddingPanel.setBackground(bgColor);
+        paddingPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        paddingPanel.add(mainPanel, BorderLayout.CENTER);
+        
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
         // Title
         JLabel titleLabel = new JLabel("Fake Social Media", SwingConstants.CENTER);
-        titleLabel.setFont(new Font(titleLabel.getFont().getName(), Font.BOLD, 24));
-        titleLabel.setForeground(new Color(59, 89, 152));
+        titleLabel.setFont(titleFont);
+        titleLabel.setForeground(primaryColor);
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
@@ -49,7 +69,7 @@ public class LoginWindow extends JFrame {
         gbc.gridwidth = 1;
         gbc.insets = new Insets(10, 10, 10, 10);
         
-        // Username label and field
+        // Username
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.anchor = GridBagConstraints.EAST;
@@ -58,9 +78,10 @@ public class LoginWindow extends JFrame {
         gbc.gridx = 1;
         gbc.anchor = GridBagConstraints.WEST;
         usernameField = new JTextField(15);
+        usernameField.setBorder(BorderFactory.createLineBorder(borderColor));
         mainPanel.add(usernameField, gbc);
         
-        // Password label and field
+        // Password
         gbc.gridx = 0;
         gbc.gridy = 2;
         gbc.anchor = GridBagConstraints.EAST;
@@ -69,19 +90,19 @@ public class LoginWindow extends JFrame {
         gbc.gridx = 1;
         gbc.anchor = GridBagConstraints.WEST;
         passwordField = new JPasswordField(15);
+        passwordField.setBorder(BorderFactory.createLineBorder(borderColor));
         mainPanel.add(passwordField, gbc);
         
         // Buttons panel
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        buttonPanel.setOpaque(false);
+        
         loginButton = new JButton("Login");
-        loginButton.setPreferredSize(new Dimension(100, 30));
-        loginButton.setBackground(new Color(59, 89, 152));
-        loginButton.setForeground(Color.WHITE);
-        loginButton.setFocusPainted(false);
+        styleButton(loginButton, true); // Primary
         loginButton.addActionListener(new LoginAction());
         
         registerButton = new JButton("Register");
-        registerButton.setPreferredSize(new Dimension(100, 30));
+        styleButton(registerButton, false); // Secondary
         registerButton.addActionListener(e -> {
             new RegisterWindow(this).setVisible(true);
             setVisible(false);
@@ -96,10 +117,30 @@ public class LoginWindow extends JFrame {
         gbc.anchor = GridBagConstraints.CENTER;
         mainPanel.add(buttonPanel, gbc);
         
-        add(mainPanel, BorderLayout.CENTER);
+        add(paddingPanel, BorderLayout.CENTER);
         
         // Allow Enter key to trigger login
         getRootPane().setDefaultButton(loginButton);
+    }
+
+    /**
+     * A helper method to style buttons consistently.
+     */
+    private void styleButton(JButton button, boolean isPrimary) {
+        button.setFocusPainted(false);
+        button.setPreferredSize(new Dimension(100, 30));
+        button.setFont(buttonFont);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        if (isPrimary) {
+            button.setBackground(primaryColor);
+            button.setForeground(Color.WHITE); // White text on blue
+            button.setBorder(BorderFactory.createLineBorder(primaryColor, 1));
+        } else {
+            button.setBackground(panelColor);
+            button.setForeground(primaryColor); // Blue text on white
+            button.setBorder(BorderFactory.createLineBorder(borderColor, 1));
+        }
     }
     
     private class LoginAction implements ActionListener {
@@ -116,6 +157,7 @@ public class LoginWindow extends JFrame {
             }
             
             try {
+                // Use hashed password for authentication
                 User user = userDAO.authenticateUser(username, AuthUtil.hashPassword(password));
                 if (user != null) {
                     // Login successful
@@ -134,4 +176,3 @@ public class LoginWindow extends JFrame {
         }
     }
 }
-

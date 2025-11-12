@@ -5,10 +5,11 @@ import java.security.NoSuchAlgorithmException;
 
 public class AuthUtil {
     
-    // Simple password hashing (MD5 - not secure but simple for a uni project)
+    // --- UPDATED: Hashing algorithm changed from MD5 to SHA-256 ---
     public static String hashPassword(String password) {
         try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
+            // Changed "MD5" to "SHA-256" for much stronger hashing
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] hashBytes = md.digest(password.getBytes());
             StringBuilder sb = new StringBuilder();
             for (byte b : hashBytes) {
@@ -21,7 +22,8 @@ public class AuthUtil {
     }
     
     public static boolean verifyPassword(String password, String hashedPassword) {
+        // This method still works, as it will hash the provided password
+        // using SHA-256 and compare it to the stored SHA-256 hash.
         return hashPassword(password).equals(hashedPassword);
     }
 }
-

@@ -42,10 +42,21 @@ public class Main {
         // Create and show the login window
         SwingUtilities.invokeLater(() -> {
             try {
-                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-            } catch (Exception e) {
-                e.printStackTrace();
+        // Use Nimbus L&F for better cross-platform button styling
+        for (UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels()) {
+            if ("Nimbus".equals(info.getName())) {
+                UIManager.setLookAndFeel(info.getClassName());
+                break;
             }
+        }
+    } catch (Exception e) {
+        // If Nimbus isn't available, fall back to system L&F
+        try {
+            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
             
             new LoginWindow().setVisible(true);
             

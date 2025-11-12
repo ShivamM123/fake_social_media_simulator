@@ -7,9 +7,8 @@ import com.fakesocial.model.User;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -22,6 +21,14 @@ public class AdminPanel extends JFrame {
     private JTable postTable;
     private DefaultTableModel userTableModel;
     private DefaultTableModel postTableModel;
+
+    // UI Styling
+    private final Color primaryColor = new Color(59, 89, 152);
+    private final Color bgColor = new Color(240, 242, 245);
+    private final Color panelColor = Color.WHITE;
+    private final Color dangerColor = new Color(220, 53, 69);
+    private final Color borderColor = new Color(220, 220, 220);
+    private final Font buttonFont = new Font(Font.SANS_SERIF, Font.BOLD, 12);
     
     public AdminPanel(User user, JFrame parent) {
         this.currentUser = user;
@@ -33,6 +40,7 @@ public class AdminPanel extends JFrame {
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setSize(1000, 600);
         setLocationRelativeTo(parent);
+        getContentPane().setBackground(bgColor);
         
         createUI();
         loadData();
@@ -43,7 +51,7 @@ public class AdminPanel extends JFrame {
         
         // Title bar
         JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setBackground(new Color(59, 89, 152));
+        titlePanel.setBackground(primaryColor);
         titlePanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         
         JLabel titleLabel = new JLabel("Admin Panel");
@@ -52,8 +60,7 @@ public class AdminPanel extends JFrame {
         titlePanel.add(titleLabel, BorderLayout.WEST);
         
         JButton closeButton = new JButton("Close");
-        closeButton.setBackground(Color.WHITE);
-        closeButton.setFocusPainted(false);
+        styleButton(closeButton, false, false); // Secondary (white)
         closeButton.addActionListener(e -> dispose());
         titlePanel.add(closeButton, BorderLayout.EAST);
         
@@ -61,6 +68,8 @@ public class AdminPanel extends JFrame {
         
         // Tabs
         JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        tabbedPane.setBackground(panelColor);
         
         // Users tab
         JPanel usersPanel = createUsersPanel();
@@ -75,6 +84,7 @@ public class AdminPanel extends JFrame {
     
     private JPanel createUsersPanel() {
         JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(bgColor);
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         // Table
@@ -87,18 +97,21 @@ public class AdminPanel extends JFrame {
         };
         
         userTable = new JTable(userTableModel);
-        userTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        styleTable(userTable);
         JScrollPane scrollPane = new JScrollPane(userTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(borderColor));
         panel.add(scrollPane, BorderLayout.CENTER);
         
         // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(panelColor);
+        buttonPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, borderColor));
         JButton refreshButton = new JButton("Refresh");
+        styleButton(refreshButton, true, false); // Primary (blue)
         refreshButton.addActionListener(e -> loadUsers());
         
         JButton deleteButton = new JButton("Delete Selected User");
-        deleteButton.setBackground(new Color(220, 53, 69));
-        deleteButton.setForeground(Color.WHITE);
+        styleButton(deleteButton, false, true); // Danger (red)
         deleteButton.addActionListener(e -> deleteSelectedUser());
         
         buttonPanel.add(refreshButton);
@@ -110,6 +123,7 @@ public class AdminPanel extends JFrame {
     
     private JPanel createPostsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
+        panel.setBackground(bgColor);
         panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
         // Table
@@ -122,18 +136,21 @@ public class AdminPanel extends JFrame {
         };
         
         postTable = new JTable(postTableModel);
-        postTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        styleTable(postTable);
         JScrollPane scrollPane = new JScrollPane(postTable);
+        scrollPane.setBorder(BorderFactory.createLineBorder(borderColor));
         panel.add(scrollPane, BorderLayout.CENTER);
         
         // Buttons
-        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setBackground(panelColor);
+        buttonPanel.setBorder(BorderFactory.createMatteBorder(1, 0, 0, 0, borderColor));
         JButton refreshButton = new JButton("Refresh");
+        styleButton(refreshButton, true, false); // Primary (blue)
         refreshButton.addActionListener(e -> loadPosts());
         
         JButton deleteButton = new JButton("Delete Selected Post");
-        deleteButton.setBackground(new Color(220, 53, 69));
-        deleteButton.setForeground(Color.WHITE);
+        styleButton(deleteButton, false, true); // Danger (red)
         deleteButton.addActionListener(e -> deleteSelectedPost());
         
         buttonPanel.add(refreshButton);
@@ -141,6 +158,38 @@ public class AdminPanel extends JFrame {
         panel.add(buttonPanel, BorderLayout.SOUTH);
         
         return panel;
+    }
+
+    private void styleTable(JTable table) {
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        table.setRowHeight(25);
+        table.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 14));
+        JTableHeader header = table.getTableHeader();
+        header.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        header.setBackground(new Color(230, 230, 230));
+        header.setForeground(primaryColor);
+        header.setBorder(BorderFactory.createLineBorder(borderColor));
+    }
+
+    private void styleButton(JButton button, boolean isPrimary, boolean isDanger) {
+        button.setFocusPainted(false);
+        button.setPreferredSize(new Dimension(180, 30));
+        button.setFont(buttonFont);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+
+        if (isDanger) {
+            button.setBackground(dangerColor);
+            button.setForeground(Color.WHITE); // White text on red
+            button.setBorder(BorderFactory.createLineBorder(dangerColor, 1));
+        } else if (isPrimary) {
+            button.setBackground(primaryColor);
+            button.setForeground(Color.WHITE); // White text on blue
+            button.setBorder(BorderFactory.createLineBorder(primaryColor, 1));
+        } else {
+            button.setBackground(panelColor);
+            button.setForeground(primaryColor); // Blue text on white
+            button.setBorder(BorderFactory.createLineBorder(borderColor, 1));
+        }
     }
     
     private void loadData() {
@@ -241,6 +290,7 @@ public class AdminPanel extends JFrame {
                 loadPosts();
                 JOptionPane.showMessageDialog(this, "Post deleted successfully!",
                         "Success", JOptionPane.INFORMATION_MESSAGE);
+                // Also refresh the main window if it's open
                 if (parentFrame instanceof MainWindow) {
                     ((MainWindow) parentFrame).loadPosts();
                 }

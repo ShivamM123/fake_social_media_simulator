@@ -46,6 +46,7 @@ public class FakeUserSimulator {
                 for (String username : FAKE_USERNAMES) {
                     try {
                         String email = username.toLowerCase() + "@fake.com";
+                        // Use the upgraded AuthUtil
                         String password = AuthUtil.hashPassword("password123");
                         int userId = userDAO.createUser(username, email, password, true, false);
                         User user = userDAO.getUserById(userId);
@@ -134,6 +135,12 @@ public class FakeUserSimulator {
             if (random.nextDouble() < 0.3) { // 30% chance to comment
                 Post randomPost = posts.get(random.nextInt(posts.size()));
                 User randomUser = fakeUsers.get(random.nextInt(fakeUsers.size()));
+                
+                // --- NEW: Don't let AI comment on its own post ---
+                if (randomPost.getUserId() == randomUser.getId()) {
+                    return; // Skip
+                }
+                
                 String aiComment = AIGenerator.generateComment();
                 
                 commentDAO.createComment(randomPost.getId(), randomUser.getId(), aiComment, true);

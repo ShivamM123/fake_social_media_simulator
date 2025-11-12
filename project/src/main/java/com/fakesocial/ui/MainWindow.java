@@ -2,31 +2,38 @@ package com.fakesocial.ui;
 
 import com.fakesocial.dao.*;
 import com.fakesocial.model.*;
-import com.fakesocial.util.AIGenerator;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import java.awt.*;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+// Removed Timer and TimerTask imports
 
 public class MainWindow extends JFrame {
+    // UI Components
     private JTextArea postTextArea;
     private JPanel postsPanel;
-    private PostDAO postDAO;
-    private UserDAO userDAO;
-    private LikeDAO likeDAO;
-    private CommentDAO commentDAO;
-    private User currentUser;
-    private JButton refreshButton;
-    private JButton adminButton;
-    private JButton logoutButton;
-    private Timer refreshTimer;
-    private Color primaryColor = new Color(59, 89, 152);
-    private Color bgColor = new Color(240, 242, 245);
-    
+    private JScrollPane scrollPane; // Class member
+    // private Timer refreshTimer; // REMOVED
+
+    // DAO and User
+    private final PostDAO postDAO;
+    private final UserDAO userDAO;
+    private final LikeDAO likeDAO;
+    private final CommentDAO commentDAO;
+    private final User currentUser;
+
+    // UI Styling
+    private final Color primaryColor = new Color(59, 89, 152);
+    private final Color bgColor = new Color(240, 242, 245);
+    private final Color panelColor = Color.WHITE;
+    private final Color textColor = new Color(30, 30, 30);
+    private final Color borderColor = new Color(220, 220, 220);
+    private final Font primaryFont = new Font(Font.SANS_SERIF, Font.PLAIN, 14);
+    private final Font boldFont = new Font(Font.SANS_SERIF, Font.BOLD, 16);
+
     public MainWindow(User user) {
         this.currentUser = user;
         postDAO = new PostDAO();
@@ -42,56 +49,39 @@ public class MainWindow extends JFrame {
         
         createUI();
         loadPosts();
-        startAutoRefresh();
+        // startAutoRefresh(); // REMOVED
     }
     
-    private void startAutoRefresh() {
-        refreshTimer = new Timer(true);
-        refreshTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                SwingUtilities.invokeLater(() -> loadPosts());
-            }
-        }, 5000, 5000);
-    }
-    
-    @Override
-    public void dispose() {
-        if (refreshTimer != null) {
-            refreshTimer.cancel();
-        }
-        super.dispose();
-    }
-    
+    // REMOVED startAutoRefresh()
+    // REMOVED dispose() override
+
     private void createUI() {
         setLayout(new BorderLayout());
         
-        // Top bar with user info and buttons
+        // --- Top Bar ---
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(primaryColor);
         topBar.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
         
         JLabel userLabel = new JLabel("Welcome, " + currentUser.getUsername() + "!");
         userLabel.setForeground(Color.WHITE);
-        userLabel.setFont(new Font(userLabel.getFont().getName(), Font.BOLD, 16));
+        userLabel.setFont(boldFont);
         topBar.add(userLabel, BorderLayout.WEST);
         
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 5, 0));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         buttonPanel.setOpaque(false);
         
         if (currentUser.isAdmin()) {
-            adminButton = new JButton("Admin Panel");
-            adminButton.setBackground(Color.WHITE);
-            adminButton.setFocusPainted(false);
+            JButton adminButton = new JButton("Admin Panel");
+            styleButton(adminButton, false); // Secondary button (white)
             adminButton.addActionListener(e -> {
                 new AdminPanel(currentUser, this).setVisible(true);
             });
             buttonPanel.add(adminButton);
         }
         
-        logoutButton = new JButton("Logout");
-        logoutButton.setBackground(Color.WHITE);
-        logoutButton.setFocusPainted(false);
+        JButton logoutButton = new JButton("Logout");
+        styleButton(logoutButton, false); // Secondary button (white)
         logoutButton.addActionListener(e -> {
             dispose();
             new LoginWindow().setVisible(true);
@@ -99,26 +89,44 @@ public class MainWindow extends JFrame {
         buttonPanel.add(logoutButton);
         
         topBar.add(buttonPanel, BorderLayout.EAST);
-        add(topBar, BorderLayout.NORTH);
         
-        // Post creation panel
+        // --- Post Creation Panel ---
         JPanel createPanel = createPostCreationPanel();
-        add(createPanel, BorderLayout.NORTH);
         
-        // Posts display
+        // --- Header Panel (Fixes layout bug) ---
+        // This panel holds both the topBar and the createPanel
+        JPanel headerPanel = new JPanel();
+        headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS)); // Stack them vertically
+        headerPanel.add(topBar);
+        headerPanel.add(createPanel);
+        add(headerPanel, BorderLayout.NORTH);
+        
+        // --- Posts Display Panel ---
         postsPanel = new JPanel();
         postsPanel.setLayout(new BoxLayout(postsPanel, BoxLayout.Y_AXIS));
         postsPanel.setBackground(bgColor);
-        JScrollPane scrollPane = new JScrollPane(postsPanel);
+        postsPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        
+        scrollPane = new JScrollPane(postsPanel); // Use class member
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getViewport().setBackground(bgColor);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder()); // Remove default border
+        
         add(scrollPane, BorderLayout.CENTER);
         
-        // Bottom panel
-        JPanel bottomPanel = new JPanel(new FlowLayout());
+        // --- Bottom Refresh Button ---
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         bottomPanel.setBackground(bgColor);
-        refreshButton = new JButton("Refresh");
+        bottomPanel.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createMatteBorder(1, 0, 0, 0, borderColor),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
+        JButton refreshButton = new JButton("Refresh Feed");
+        styleButton(refreshButton, true); // Primary button (blue)
+        refreshButton.setPreferredSize(new Dimension(150, 30));
         refreshButton.addActionListener(e -> loadPosts());
+        
         bottomPanel.add(refreshButton);
         add(bottomPanel, BorderLayout.SOUTH);
     }
@@ -126,29 +134,31 @@ public class MainWindow extends JFrame {
     private JPanel createPostCreationPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createTitledBorder("Create New Post"),
-            BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            BorderFactory.createMatteBorder(0, 0, 1, 0, borderColor),
+            BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
-        panel.setBackground(Color.WHITE);
-        panel.setPreferredSize(new Dimension(0, 140));
+        panel.setBackground(panelColor);
         
         postTextArea = new JTextArea(3, 30);
         postTextArea.setLineWrap(true);
         postTextArea.setWrapStyleWord(true);
-        postTextArea.setFont(new Font(postTextArea.getFont().getName(), Font.PLAIN, 14));
+        postTextArea.setFont(primaryFont);
+        postTextArea.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(borderColor, 1),
+            BorderFactory.createEmptyBorder(5, 5, 5, 5)
+        ));
         JScrollPane textScrollPane = new JScrollPane(postTextArea);
+        textScrollPane.setBorder(BorderFactory.createEmptyBorder());
         
         JButton postButton = new JButton("Post");
-        postButton.setBackground(primaryColor);
-        postButton.setForeground(Color.BLACK);
-        postButton.setFocusPainted(false);
-        postButton.setPreferredSize(new Dimension(80, 30));
+        styleButton(postButton, true); // Primary button (blue)
         postButton.addActionListener(e -> createPost());
         
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
         buttonPanel.setOpaque(false);
         buttonPanel.add(postButton);
         
+        panel.add(new JLabel("Create New Post"), BorderLayout.NORTH);
         panel.add(textScrollPane, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
         
@@ -166,7 +176,7 @@ public class MainWindow extends JFrame {
         try {
             postDAO.createPost(currentUser.getId(), content, false);
             postTextArea.setText("");
-            loadPosts();
+            loadPosts(); // Refresh immediately after posting
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error creating post: " + e.getMessage(), 
                     "Error", JOptionPane.ERROR_MESSAGE);
@@ -182,115 +192,134 @@ public class MainWindow extends JFrame {
             if (posts.isEmpty()) {
                 JLabel noPostsLabel = new JLabel("No posts yet. Be the first to post!");
                 noPostsLabel.setHorizontalAlignment(SwingConstants.CENTER);
-                noPostsLabel.setFont(new Font(noPostsLabel.getFont().getName(), Font.ITALIC, 14));
+                noPostsLabel.setFont(new Font(primaryFont.getName(), Font.ITALIC, 14));
                 postsPanel.add(noPostsLabel);
             } else {
                 for (Post post : posts) {
                     JPanel postPanel = createPostPanel(post);
                     postsPanel.add(postPanel);
-                    postsPanel.add(Box.createVerticalStrut(15));
+                    postsPanel.add(Box.createVerticalStrut(15)); // Space between posts
                 }
             }
-            
-            postsPanel.revalidate();
-            postsPanel.repaint();
         } catch (SQLException e) {
-            JOptionPane.showMessageDialog(this, "Error loading posts: " + e.getMessage(), 
-                    "Error", JOptionPane.ERROR_MESSAGE);
+            postsPanel.add(new JLabel("Error loading posts: " + e.getMessage()));
         }
+        
+        // Redraw the panel
+        postsPanel.revalidate();
+        postsPanel.repaint();
+        
+        // Scroll to top after manual refresh
+        SwingUtilities.invokeLater(() -> {
+            scrollPane.getVerticalScrollBar().setValue(0);
+        });
     }
     
     private JPanel createPostPanel(Post post) {
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
+        JPanel mainPanel = new JPanel(new BorderLayout(10, 10)); // Use BorderLayout
         mainPanel.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(200, 200, 200), 1),
+                BorderFactory.createLineBorder(borderColor, 1),
                 BorderFactory.createEmptyBorder(15, 15, 15, 15)
         ));
-        mainPanel.setBackground(Color.WHITE);
-        mainPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, Integer.MAX_VALUE));
+        mainPanel.setBackground(panelColor);
+        // REMOVED setMaximumSize to prevent layout conflicts
         
         try {
             User user = userDAO.getUserById(post.getUserId());
             String username = user != null ? user.getUsername() : "Unknown User";
             
-            // Header
+            // --- Header ---
             JPanel headerPanel = new JPanel(new BorderLayout());
             headerPanel.setOpaque(false);
+            
             JLabel userLabel = new JLabel(username);
-            userLabel.setFont(new Font(userLabel.getFont().getName(), Font.BOLD, 16));
-            userLabel.setForeground(primaryColor);
+            userLabel.setFont(boldFont);
+            userLabel.setForeground(textColor);
             
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd, HH:mm");
             String timeString = post.getCreatedAt() != null ? 
                     post.getCreatedAt().format(formatter) : "Unknown";
             JLabel timeLabel = new JLabel(timeString);
-            timeLabel.setFont(new Font(timeLabel.getFont().getName(), Font.PLAIN, 11));
+            timeLabel.setFont(primaryFont.deriveFont(11f));
             timeLabel.setForeground(Color.GRAY);
             
+            JPanel userTimePanel = new JPanel(new BorderLayout());
+            userTimePanel.setOpaque(false);
+            userTimePanel.add(userLabel, BorderLayout.CENTER);
+            userTimePanel.add(timeLabel, BorderLayout.SOUTH);
+            
+            headerPanel.add(userTimePanel, BorderLayout.WEST);
+            
             if (post.isAiGenerated()) {
-                JLabel aiLabel = new JLabel("🤖 AI");
-                aiLabel.setFont(new Font(aiLabel.getFont().getName(), Font.ITALIC, 10));
+                JLabel aiLabel = new JLabel("🤖 AI Generated");
+                aiLabel.setFont(new Font(primaryFont.getName(), Font.ITALIC, 10));
                 aiLabel.setForeground(new Color(100, 100, 100));
-                headerPanel.add(aiLabel, BorderLayout.CENTER);
+                headerPanel.add(aiLabel, BorderLayout.EAST);
             }
             
-            headerPanel.add(userLabel, BorderLayout.WEST);
-            headerPanel.add(timeLabel, BorderLayout.EAST);
-            mainPanel.add(headerPanel);
-            mainPanel.add(Box.createVerticalStrut(10));
+            mainPanel.add(headerPanel, BorderLayout.NORTH);
             
-            // Content
-            JTextArea contentArea = new JTextArea(post.getContent());
-            contentArea.setEditable(false);
-            contentArea.setLineWrap(true);
-            contentArea.setWrapStyleWord(true);
-            contentArea.setBackground(Color.WHITE);
-            contentArea.setFont(new Font(contentArea.getFont().getName(), Font.PLAIN, 14));
-            contentArea.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-            mainPanel.add(contentArea);
-            mainPanel.add(Box.createVerticalStrut(10));
-            
-            // Footer - Like and Comment buttons
-            JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 5));
+            // --- Content (FIX for garbled text) ---
+            // Use a JLabel with HTML for safe text wrapping
+            String htmlContent = "<html><p style='width: 500px;'>" + 
+                                post.getContent().replace("\n", "<br>") + 
+                                "</p></html>";
+            JLabel contentLabel = new JLabel(htmlContent);
+            contentLabel.setFont(primaryFont.deriveFont(15f));
+            contentLabel.setForeground(textColor);
+            contentLabel.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
+            mainPanel.add(contentLabel, BorderLayout.CENTER);
+
+            // --- Footer Panel ---
+            JPanel footerContainer = new JPanel(); // New container
+            footerContainer.setLayout(new BoxLayout(footerContainer, BoxLayout.Y_AXIS));
+            footerContainer.setOpaque(false);
+
+            // --- Footer (Like/Comment buttons) ---
+            JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 5));
             footerPanel.setOpaque(false);
+            footerPanel.setAlignmentX(Component.LEFT_ALIGNMENT); // Align left
             
             JButton likeButton = new JButton("❤ Like");
-            likeButton.setFocusPainted(false);
-            likeButton.setBackground(Color.WHITE);
+            JButton commentButton = new JButton("💬 Comment");
             
             boolean hasLiked = likeDAO.hasUserLikedPost(post.getId(), currentUser.getId());
+            
+            // Style the 'like' button based on state
             if (hasLiked) {
                 likeButton.setText("❤ Liked");
-                likeButton.setForeground(Color.RED);
+                styleButton(likeButton, true); // "Liked" is a primary action (blue)
+            } else {
+                styleButton(likeButton, false); // "Like" is a secondary action (white)
             }
             
+            styleButton(commentButton, false); // "Comment" is always secondary (white)
+            
             likeButton.addActionListener(e -> toggleLike(post));
-            
-            JLabel likeCountLabel = new JLabel("(" + post.getLikeCount() + ")");
-            likeCountLabel.setForeground(Color.GRAY);
-            
-            JButton commentButton = new JButton("💬 Comment");
-            commentButton.setFocusPainted(false);
-            commentButton.setBackground(Color.WHITE);
             commentButton.addActionListener(e -> showCommentDialog(post));
+            
+            JLabel likeCountLabel = new JLabel(post.getLikeCount() + " likes");
+            likeCountLabel.setForeground(Color.GRAY);
+            likeCountLabel.setFont(primaryFont.deriveFont(12f));
+            likeCountLabel.setBorder(BorderFactory.createEmptyBorder(0, 10, 0, 15));
             
             footerPanel.add(likeButton);
             footerPanel.add(likeCountLabel);
             footerPanel.add(commentButton);
-            mainPanel.add(footerPanel);
+            footerContainer.add(footerPanel); // Add footer to container
             
-            // Comments section
+            // --- Comments Section ---
             List<Comment> comments = commentDAO.getCommentsByPostId(post.getId());
             if (!comments.isEmpty()) {
-                mainPanel.add(Box.createVerticalStrut(10));
+                footerContainer.add(Box.createVerticalStrut(15));
                 JPanel commentsPanel = new JPanel();
                 commentsPanel.setLayout(new BoxLayout(commentsPanel, BoxLayout.Y_AXIS));
                 commentsPanel.setOpaque(false);
                 commentsPanel.setBorder(BorderFactory.createCompoundBorder(
-                    BorderFactory.createMatteBorder(1, 0, 0, 0, new Color(230, 230, 230)),
-                    BorderFactory.createEmptyBorder(10, 10, 0, 10)
+                    BorderFactory.createMatteBorder(1, 0, 0, 0, borderColor),
+                    BorderFactory.createEmptyBorder(10, 0, 0, 0)
                 ));
+                commentsPanel.setAlignmentX(Component.LEFT_ALIGNMENT); // Align left
                 
                 for (Comment comment : comments) {
                     JPanel commentPanel = createCommentPanel(comment);
@@ -298,47 +327,46 @@ public class MainWindow extends JFrame {
                     commentsPanel.add(Box.createVerticalStrut(5));
                 }
                 
-                mainPanel.add(commentsPanel);
+                footerContainer.add(commentsPanel); // Add comments to container
             }
+
+            mainPanel.add(footerContainer, BorderLayout.SOUTH); // Add container to bottom
             
         } catch (SQLException e) {
             JLabel errorLabel = new JLabel("Error loading post: " + e.getMessage());
-            mainPanel.add(errorLabel);
+            mainPanel.add(errorLabel, BorderLayout.CENTER);
         }
         
         return mainPanel;
     }
     
     private JPanel createCommentPanel(Comment comment) {
-        JPanel panel = new JPanel(new BorderLayout(5, 5));
+        JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         panel.setOpaque(false);
+        panel.setAlignmentX(Component.LEFT_ALIGNMENT); // Align left
         
         try {
             User user = userDAO.getUserById(comment.getUserId());
             String username = user != null ? user.getUsername() : "Unknown";
             
-            JLabel userLabel = new JLabel(username + ":");
-            userLabel.setFont(new Font(userLabel.getFont().getName(), Font.BOLD, 12));
+            JLabel userLabel = new JLabel(username);
+            userLabel.setFont(boldFont.deriveFont(12f));
             userLabel.setForeground(primaryColor);
             
-            JLabel contentLabel = new JLabel(comment.getContent());
-            contentLabel.setFont(new Font(contentLabel.getFont().getName(), Font.PLAIN, 12));
+            String aiTag = comment.isAiGenerated() ? " 🤖" : "";
+            // Use JLabel with HTML for comment wrapping too
+            String htmlComment = "<html><p style='width: 450px;'>" + 
+                                 comment.getContent().replace("\n", "<br>") + aiTag + 
+                                 "</p></html>";
+            JLabel contentLabel = new JLabel(htmlComment);
+            contentLabel.setFont(primaryFont.deriveFont(12f));
+            contentLabel.setForeground(textColor);
             
-            JPanel contentPanel = new JPanel(new BorderLayout());
-            contentPanel.setOpaque(false);
-            contentPanel.add(userLabel, BorderLayout.WEST);
-            contentPanel.add(contentLabel, BorderLayout.CENTER);
-            
-            if (comment.isAiGenerated()) {
-                JLabel aiLabel = new JLabel("🤖");
-                aiLabel.setFont(new Font(aiLabel.getFont().getName(), Font.PLAIN, 10));
-                contentPanel.add(aiLabel, BorderLayout.EAST);
-            }
-            
-            panel.add(contentPanel, BorderLayout.CENTER);
+            panel.add(userLabel);
+            panel.add(contentLabel);
             
         } catch (SQLException e) {
-            // Error loading comment
+            panel.add(new JLabel("Error loading comment..."));
         }
         
         return panel;
@@ -348,26 +376,29 @@ public class MainWindow extends JFrame {
         JDialog dialog = new JDialog(this, "Add Comment", true);
         dialog.setSize(400, 200);
         dialog.setLocationRelativeTo(this);
+        dialog.getContentPane().setBackground(panelColor);
         
         JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
         
         JTextArea commentArea = new JTextArea(5, 30);
         commentArea.setLineWrap(true);
         commentArea.setWrapStyleWord(true);
+        commentArea.setFont(primaryFont);
+        commentArea.setBorder(BorderFactory.createLineBorder(borderColor));
         JScrollPane scrollPane = new JScrollPane(commentArea);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
         
-        JButton submitButton = new JButton("Comment");
-        submitButton.setBackground(primaryColor);
-        submitButton.setForeground(Color.WHITE);
-        submitButton.setFocusPainted(false);
+        JButton submitButton = new JButton("Post Comment");
+        styleButton(submitButton, true); // Primary button (blue)
         submitButton.addActionListener(e -> {
             String content = commentArea.getText().trim();
             if (!content.isEmpty()) {
                 try {
                     commentDAO.createComment(post.getId(), currentUser.getId(), content, false);
                     dialog.dispose();
-                    loadPosts();
+                    loadPosts(); // Refresh to show new comment
                 } catch (SQLException ex) {
                     JOptionPane.showMessageDialog(dialog, "Error adding comment: " + ex.getMessage(),
                             "Error", JOptionPane.ERROR_MESSAGE);
@@ -379,8 +410,10 @@ public class MainWindow extends JFrame {
         });
         
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        buttonPanel.setOpaque(false);
         buttonPanel.add(submitButton);
         
+        panel.add(new JLabel("Replying to post " + post.getId()), BorderLayout.NORTH);
         panel.add(scrollPane, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
         
@@ -398,10 +431,34 @@ public class MainWindow extends JFrame {
                 likeDAO.addLike(post.getId(), currentUser.getId());
             }
             
-            loadPosts();
+            loadPosts(); // Refresh to show new like count and button state
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error toggling like: " + e.getMessage(), 
                     "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+    
+    /**
+     * A helper method to style buttons consistently.
+     * @param button The button to style.
+     * @param isPrimary If true, style as a primary action (blue bg, white text).
+     * If false, style as a secondary action (white bg, blue text).
+     */
+    private void styleButton(JButton button, boolean isPrimary) {
+        button.setFocusPainted(false);
+        button.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(isPrimary ? primaryColor : borderColor, 1),
+            BorderFactory.createEmptyBorder(5, 10, 5, 10)
+        ));
+        button.setFont(primaryFont.deriveFont(Font.BOLD, 12f));
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        
+        if (isPrimary) {
+            button.setBackground(primaryColor);
+            button.setForeground(Color.WHITE);
+        } else {
+            button.setBackground(panelColor);
+            button.setForeground(primaryColor);
         }
     }
 }

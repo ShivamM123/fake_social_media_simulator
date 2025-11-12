@@ -59,4 +59,3 @@ public class AIGenerator {
         return COMMENT_TEMPLATES[random.nextInt(COMMENT_TEMPLATES.length)];
     }
 }
-

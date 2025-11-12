@@ -65,6 +65,22 @@ public class UserDAO {
             return null;
         }
     }
+
+    // --- NEW: Method to check for existing email ---
+    public User getUserByEmail(String email) throws SQLException {
+        String sql = "SELECT * FROM users WHERE email = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+
+            pstmt.setString(1, email);
+            ResultSet rs = pstmt.executeQuery();
+
+            if (rs.next()) {
+                return mapResultSetToUser(rs);
+            }
+            return null;
+        }
+    }
     
     public User authenticateUser(String username, String password) throws SQLException {
         User user = getUserByUsername(username);
